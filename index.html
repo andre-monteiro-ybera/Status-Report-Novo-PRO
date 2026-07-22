@@ -248,7 +248,7 @@
    - ENDPOINT com URL -> busca o JSON no webhook do N8N (botão Atualizar)
    O dado embutido serve de fallback se o endpoint falhar (mostra última versão).
    ===================================================================== */
-const ENDPOINT = "https://n8n-homolog.b2.club/webhook/novo-pro-dados";// cole aqui a URL do webhook N8N para ativar o modo ao vivo
+const ENDPOINT = "https://n8n-homolog.b2.club/webhook/novo-pro-dados"; // cole aqui a URL do webhook N8N para ativar o modo ao vivo
 let lastData = (typeof window!=="undefined" && window.DASHBOARD_DATA) ? window.DASHBOARD_DATA : null;
 
 /* ===================== motor ===================== */
@@ -269,6 +269,11 @@ const pbisEst=pbisTotais-pbisReal;
 const pbisTests=allF.reduce((s,f)=>s+(f.tests||0),0);
 const reqTotal=allF.reduce((s,f)=>s+(f.req||0),0);
 const pctValid=Math.round(pbisTests/pbisTotais*100);
+const featsRealizado=allF.filter(f=>f.refin==="realizado").length;
+const featsIniciadas=cnt.validacao+cnt.desenvolvimento;
+const pctFeatValid=Math.round(cnt.validacao/totalFeat*100);
+const pctFeatIniciado=Math.round(featsIniciadas/totalFeat*100);
+const pctFeatReal=Math.round(featsRealizado/totalFeat*100);
 const horasTotal=DADOS.horas.porMes.reduce((s,m)=>s+m.h,0);
 const d0=new Date(P.inicioExecucao+"T00:00:00");
 const dEnd=new Date(P.deadline+"T00:00:00");
@@ -284,16 +289,15 @@ const CONF={ // metodologia visível e ajustável
   pesos:{ritmo:1, maturidade:1, iniciado:1},
   faixas:{alta:70, media:50}, // >=70 Alta · 50-69 Média · <50 Baixa
 };
-const featsIniciadas=cnt.validacao+cnt.desenvolvimento;
 const fatores=[
   { chave:"ritmo", nome:"Ritmo (progresso × tempo)",
-    nota: pctTempo? Math.min(100,Math.round(pctValid/pctTempo*100)) : 0,
-    detalhe:`${pctValid}% pronto p/ validação vs ${pctTempo}% do tempo decorrido` },
+    nota: pctTempo? Math.min(100,Math.round(pctFeatValid/pctTempo*100)) : 0,
+    detalhe:`${cnt.validacao} de ${totalFeat} features em validação (${pctFeatValid}%) vs ${pctTempo}% do tempo decorrido` },
   { chave:"maturidade", nome:"Maturidade do escopo",
-    nota: Math.round(pbisReal/pbisTotais*100),
-    detalhe:`${pbisReal} de ${pbisTotais} PBIs refinados; ${pbisEst} ainda são estimativa` },
+    nota: pctFeatReal,
+    detalhe:`${featsRealizado} de ${totalFeat} features refinadas; ${totalFeat-featsRealizado} ainda são estimativa` },
   { chave:"iniciado", nome:"Escopo iniciado",
-    nota: Math.round(featsIniciadas/totalFeat*100),
+    nota: pctFeatIniciado,
     detalhe:`${featsIniciadas} de ${totalFeat} features iniciadas; ${cnt.nao_iniciado} não começaram` },
 ];
 const somaPesos=Object.values(CONF.pesos).reduce((a,b)=>a+b,0);
@@ -325,7 +329,7 @@ function metric(label,value,unit,sub,mod){const c=el("div","card metric"+(mod?" 
   const tl=el("div","timeline");
   tl.innerHTML=`<div class="tl-track"><div class="tl-elapsed" style="width:${pctTempo}%"></div><div class="tl-today" style="left:${pctTempo}%"></div></div>
     <div class="tl-ends"><span><b>${d0.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}</b>início</span><span style="text-align:right"><b>${dEnd.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}</b>prazo</span></div>
-    <div class="tl-meta"><div class="m"><div class="n">${pctTempo}%</div><div class="l">do tempo decorrido</div></div><div class="m"><div class="n">${restantes}</div><div class="l">dias restantes</div></div><div class="m"><div class="n" style="color:var(--valid)">${pctValid}%</div><div class="l">pronto p/ validação</div></div></div>`;
+    <div class="tl-meta"><div class="m"><div class="n">${pctTempo}%</div><div class="l">do tempo decorrido</div></div><div class="m"><div class="n">${restantes}</div><div class="l">dias restantes</div></div><div class="m"><div class="n" style="color:var(--valid)">${cnt.validacao}</div><div class="l">features em validação</div></div></div>`;
   hero.appendChild(tl); p.appendChild(hero);
 
   // indicador de confiança na entrega
@@ -357,13 +361,13 @@ function metric(label,value,unit,sub,mod){const c=el("div","card metric"+(mod?" 
   p.appendChild(row);
 
   const fn=el("div","card mt");
-  fn.innerHTML=`<h2>Funil de PBIs — da estimativa à validação</h2><div class="h-sub">Onde o trabalho realmente está. "Refinados" = PBIs criados no DevOps (Realizado); o resto ainda é estimativa do protótipo.</div>`;
-  const axisMax=pbisTotais;
-  const pct=v=>Math.round(v/pbisTotais*100);
+  fn.innerHTML=`<h2>Funil de features — do escopo à validação</h2><div class="h-sub">Quantas das ${totalFeat} features já saíram do papel e chegaram à validação.</div>`;
+  const axisMax=totalFeat;
+  const pct=v=>Math.round(v/totalFeat*100);
   const fnData=[
-    {n:"PBIs previstos",s:"realizados + estimados",v:pbisTotais,cls:"b1",showpct:false},
-    {n:"Refinados (criados)",s:"Realizado no DevOps",v:pbisReal,cls:"b2",showpct:true},
-    {n:"Em validação",s:"prontos, aguardam nós",v:pbisTests,cls:"b3",showpct:true},
+    {n:"Features no total",s:"escopo do MVP",v:totalFeat,cls:"b1",showpct:false},
+    {n:"Iniciadas",s:"em dev ou validação",v:featsIniciadas,cls:"b2",showpct:true},
+    {n:"Em validação",s:"construídas, aguardam nós",v:cnt.validacao,cls:"b3",showpct:true},
   ];
   const bc=el("div","bc");
   fnData.forEach(r=>{
@@ -380,7 +384,7 @@ function metric(label,value,unit,sub,mod){const c=el("div","card metric"+(mod?" 
   fn.appendChild(bc);
   const call=el("div","callout");
   call.innerHTML=`<svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
-    <div class="ct"><b>Leitura:</b> dos ${pbisTotais} PBIs previstos, só <b>${pbisReal} foram refinados/criados</b> — os outros ${pbisEst} ainda são estimativa do protótipo e podem variar. <b>${pbisTests} estão prontos para validação</b> (${pctValid}%), concentrados nas primeiras features de cada persona. O gargalo à frente é destravar validação e refinar o escopo estimado.</div>`;
+    <div class="ct"><b>Leitura:</b> das ${totalFeat} features do MVP, ${featsIniciadas} foram iniciadas e apenas <b>${cnt.validacao} chegaram à validação</b>. As outras ${cnt.nao_iniciado} ainda não começaram, com ${pctTempo}% do tempo já decorrido. O foco agora é destravar validação e iniciar o escopo pendente. <i>(Detalhe fino na aba Escopo &amp; features.)</i></div>`;
   fn.appendChild(call); p.appendChild(fn);
 
   const pc=el("div","card mt");
@@ -447,9 +451,9 @@ function metric(label,value,unit,sub,mod){const c=el("div","card metric"+(mod?" 
 (function(){
   const p=$('.panel[data-panel="horas"]');
   const H=DADOS.horas;
-  //const note=el("div","input-note");
-  //note.innerHTML=`Horas <b>alocadas pela Global</b> no período <b>${H.periodo}</b>, direto da aba "Horas Alocadas". ${H.contratadas?`Teto contratado: ${H.contratadas} h.`:`A planilha não registra um teto contratado — se houver, adicione em <span class="mono">horas.contratadas</span> para comparar consumo x orçamento.`}`;
-  //p.appendChild(note);
+  const note=el("div","input-note");
+  note.innerHTML=`Horas <b>alocadas pela Global</b> no período <b>${H.periodo}</b>, direto da aba "Horas Alocadas". ${H.contratadas?`Teto contratado: ${H.contratadas} h.`:`A planilha não registra um teto contratado — se houver, adicione em <span class="mono">horas.contratadas</span> para comparar consumo x orçamento.`}`;
+  p.appendChild(note);
 
   const row=el("div","grid g3");
   row.appendChild(metric("Total alocado",horasTotal.toLocaleString("pt-BR"),"h",H.periodo,"valid"));
