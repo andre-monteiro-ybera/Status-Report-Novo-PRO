@@ -451,9 +451,9 @@ function metric(label,value,unit,sub,mod){const c=el("div","card metric"+(mod?" 
 (function(){
   const p=$('.panel[data-panel="horas"]');
   const H=DADOS.horas;
-  const note=el("div","input-note");
-  note.innerHTML=`Horas <b>alocadas pela Global</b> no período <b>${H.periodo}</b>, direto da aba "Horas Alocadas". ${H.contratadas?`Teto contratado: ${H.contratadas} h.`:`A planilha não registra um teto contratado — se houver, adicione em <span class="mono">horas.contratadas</span> para comparar consumo x orçamento.`}`;
-  p.appendChild(note);
+  //const note=el("div","input-note");
+  //note.innerHTML=`Horas <b>alocadas pela Global</b> no período <b>${H.periodo}</b>, direto da aba "Horas Alocadas". ${H.contratadas?`Teto contratado: ${H.contratadas} h.`:`A planilha não registra um teto contratado — se houver, adicione em <span class="mono">horas.contratadas</span> para comparar consumo x orçamento.`}`;
+  //p.appendChild(note);
 
   const row=el("div","grid g3");
   row.appendChild(metric("Total alocado",horasTotal.toLocaleString("pt-BR"),"h",H.periodo,"valid"));
