@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novo PRO — Painel de Andamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --porcelain:#F4F6F8; --surface:#FFFFFF; --surface-2:#FAFBFC;
+    --ink:#1B2A3A; --ink-2:#546073; --ink-3:#8894A5;
+    --line:#E3E8EE; --line-strong:#CBD3DD;
+    --cobalt:#2E51C4; --cobalt-2:#4B6FE0; --cobalt-soft:#E9EDFB;
+    --done:#12A150; --done-soft:#E2F3E9;
+    --valid:#2E51C4; --valid-soft:#E9EDFB;
+    --dev:#C77E1A; --dev-soft:#FBEFD9;
+    --idle:#8894A5; --idle-soft:#EEF1F5;
+    --risk:#C0392B; --risk-soft:#FBE7E4;
+    --real:#12A150; --est:#8894A5;
+    --display:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,-apple-system,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    --shadow:0 1px 2px rgba(27,42,58,.04),0 6px 20px rgba(27,42,58,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--porcelain);color:var(--ink);font-family:var(--body);
+    line-height:1.5;-webkit-font-smoothing:antialiased;font-size:15px}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 22px 72px}
+  header{background:var(--ink);color:#fff}
+  .topbar{max-width:1140px;margin:0 auto;padding:22px;display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+  .brand{margin-right:auto}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8FA0FF;margin-bottom:4px}
+  .brand h1{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:-.02em}
+  .deadline-chip{text-align:right}
+  .deadline-chip .dl-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8894A5}
+  .deadline-chip .dl-date{font-family:var(--display);font-size:22px;font-weight:600;color:#fff}
+  .deadline-chip .dl-days{font-family:var(--mono);font-size:12px;color:#8FA0FF}
+  .updated{font-family:var(--mono);font-size:11px;color:#6B778C;width:100%;padding-top:4px}
+  nav.tabs{background:var(--ink);border-top:1px solid #2B3A4C}
+  .tabs-inner{max-width:1140px;margin:0 auto;padding:0 12px;display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{border:none;background:none;font-family:var(--display);font-size:14px;font-weight:500;color:#8894A5;padding:14px 18px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:color .15s}
+  .tab:hover{color:#C9D2DE}
+  .tab.active{color:#fff;border-bottom-color:var(--cobalt-2)}
+  .panel{display:none;padding-top:30px}
+  .panel.active{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.panel.active{animation:none}}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;box-shadow:var(--shadow)}
+  .card h2{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);margin-bottom:4px}
+  .card .h-sub{font-size:12px;color:var(--ink-3);margin-bottom:18px}
+  .mt{margin-top:16px}
+  .metric .label{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.09em;margin-bottom:12px}
+  .metric .value{font-family:var(--display);font-size:40px;font-weight:600;line-height:1;letter-spacing:-.02em}
+  .metric .value .u{font-family:var(--mono);font-size:15px;color:var(--ink-3);margin-left:4px;letter-spacing:0}
+  .metric .sub{font-size:12.5px;color:var(--ink-2);margin-top:9px}
+  .metric.done .value{color:var(--done)}.metric.valid .value{color:var(--valid)}.metric.dev .value{color:var(--dev)}.metric.idle .value{color:var(--ink)}
+  .timeline{position:relative;margin:10px 0 2px}
+  .tl-track{position:relative;height:12px;background:var(--idle-soft);border-radius:100px}
+  .tl-elapsed{position:absolute;top:0;left:0;height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cobalt),var(--cobalt-2))}
+  .tl-today{position:absolute;top:-7px;bottom:-7px;width:2px;background:var(--ink)}
+  .tl-today::after{content:'hoje';position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--ink);white-space:nowrap}
+  .tl-ends{display:flex;justify-content:space-between;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .tl-ends b{color:var(--ink);display:block;font-size:13px}
+  .tl-meta{display:flex;gap:28px;margin-top:18px;flex-wrap:wrap}
+  .tl-meta .m .n{font-family:var(--display);font-size:24px;font-weight:600}
+  .tl-meta .m .l{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em}
+  .funnel{display:flex;flex-direction:column;gap:11px;margin-top:4px}
+  .fn-row{display:grid;grid-template-columns:170px 1fr 52px;align-items:center;gap:14px}
+  .fn-name{font-size:13.5px;font-weight:500}
+  .fn-name small{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);font-weight:400}
+  .fn-bar{height:26px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .fn-bar>span{display:block;height:100%;border-radius:5px 0 0 5px}
+  .fn-val{font-family:var(--mono);font-size:15px;font-weight:600;text-align:right}
+  .fn-1>span{background:var(--ink-3)}.fn-2>span{background:var(--cobalt)}.fn-3>span{background:var(--done)}.fn-4>span{background:var(--dev)}
+  .bc{margin-top:6px}
+  .bc-row{display:grid;grid-template-columns:158px 1fr;align-items:center;gap:14px;margin-bottom:15px}
+  .bc-lbl{font-size:13px;font-weight:500;text-align:right;line-height:1.3}
+  .bc-lbl small{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);font-weight:400;letter-spacing:.02em}
+  .bc-barwrap{position:relative;height:28px;display:flex;align-items:center;border-left:1px solid var(--line-strong);
+    background-image:linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:25% 100%}
+  .bc-bar{height:100%;border-radius:0 4px 4px 0;min-width:2px;transition:width .4s ease}
+  .bc-bar.b1{background:var(--cobalt)}.bc-bar.b2{background:var(--done)}.bc-bar.b3{background:var(--dev)}
+  .bc-val{margin-left:9px;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap}
+  .bc-val small{color:var(--ink-3);font-size:11px;font-weight:400;margin-left:3px}
+  .bc-axis{display:grid;grid-template-columns:158px 1fr;gap:14px;margin-top:2px}
+  .bc-axis .ticks{display:flex;justify-content:space-between}
+  .bc-axis .ticks span{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+  @media(prefers-reduced-motion:reduce){.bc-bar{transition:none}}
+  .callout{display:flex;gap:14px;padding:16px 18px;border-radius:10px;background:var(--dev-soft);border:1px solid #EBD9B4;margin-top:16px}
+  /* indicador de confiança */
+  .conf-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .conf-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:15px;font-weight:600;padding:7px 15px;border-radius:100px}
+  .conf-badge .d{width:9px;height:9px;border-radius:50%}
+  .conf-badge.done{background:var(--done-soft);color:var(--done)}.conf-badge.done .d{background:var(--done)}
+  .conf-badge.dev{background:var(--dev-soft);color:var(--dev)}.conf-badge.dev .d{background:var(--dev)}
+  .conf-badge.risk{background:var(--risk-soft);color:var(--risk)}.conf-badge.risk .d{background:var(--risk)}
+  .conf-score{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+  .conf-score b{font-family:var(--display);font-size:20px;color:var(--ink)}
+  .conf-meter{height:8px;border-radius:100px;background:linear-gradient(90deg,var(--risk) 0%,var(--risk) 50%,var(--dev) 50%,var(--dev) 70%,var(--done) 70%);position:relative;margin:14px 0 20px}
+  .conf-meter .pin{position:absolute;top:-5px;width:3px;height:18px;background:var(--ink);border-radius:2px;transform:translateX(-50%)}
+  .conf-factors{display:flex;flex-direction:column;gap:2px}
+  .cf-row{display:grid;grid-template-columns:190px 46px 1fr;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .cf-row:first-child{border-top:none}
+  .cf-name{font-size:13.5px;font-weight:500}
+  .cf-nota{font-family:var(--mono);font-size:15px;font-weight:600;text-align:right}
+  .cf-det{font-size:12.5px;color:var(--ink-2)}
+  .conf-note{font-size:11.5px;color:var(--ink-3);margin-top:14px;padding-top:13px;border-top:1px solid var(--line);font-style:italic}
+  .callout .ic{flex-shrink:0;color:var(--dev);margin-top:1px}
+  .callout .ct{font-size:13.5px;color:var(--ink)}.callout .ct b{font-weight:600}
+  .pp{display:flex;flex-direction:column;gap:14px;margin-top:4px}
+  .pp-row .pp-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .pp-name{font-weight:600;font-size:14px}
+  .pp-stat{font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+  .pp-bar{height:9px;border-radius:100px;background:var(--idle-soft);overflow:hidden;display:flex}
+  .pp-bar i{height:100%;display:block}
+  .pp-bar .s-valid{background:var(--valid)}.pp-bar .s-dev{background:var(--dev)}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .persona-block{margin-top:18px}
+  .persona-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .persona-head h3{font-family:var(--display);font-size:16px;font-weight:600}
+  .persona-head .ph-stat{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:0 10px 9px;border-bottom:1px solid var(--line-strong)}
+  th.num,td.num{text-align:center}
+  td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .fname{font-weight:500}
+  .st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:100px;white-space:nowrap}
+  .st .d{width:7px;height:7px;border-radius:50%}
+  .st.valid{background:var(--valid-soft);color:var(--valid)}.st.valid .d{background:var(--valid)}
+  .st.dev{background:var(--dev-soft);color:var(--dev)}.st.dev .d{background:var(--dev)}
+  .st.idle{background:var(--idle-soft);color:var(--ink-2)}.st.idle .d{background:var(--idle)}
+  .tag{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:5px}
+  .tag.real{background:var(--done-soft);color:var(--real)}
+  .tag.est{background:var(--idle-soft);color:var(--ink-2)}
+  .mono{font-family:var(--mono);font-size:13px}
+  .dash{color:var(--ink-3)}
+  .pctcell{font-family:var(--mono);font-size:12.5px;font-weight:600}
+  tr.subtotal td{border-top:2px solid var(--line-strong);border-bottom:none;font-family:var(--mono);font-weight:600;font-size:12.5px;color:var(--ink);padding-top:11px}
+  .hbars{display:flex;align-items:flex-end;gap:8px;height:190px;margin:10px 0 4px;padding-top:24px}
+  .hb{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .hb .stack{width:100%;max-width:40px;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+  .hb .cons{background:var(--cobalt);border-radius:4px 4px 0 0;width:100%;min-height:2px}
+  .hb .mo{font-family:var(--mono);font-size:10px;color:var(--ink-2);text-align:center}
+  .hb .hv{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink)}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 60px;align-items:center;gap:12px;margin-bottom:9px}
+  .bar-row .bl{font-size:13px;font-weight:500}
+  .bar-row .bt{height:18px;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .bar-row .bt>span{display:block;height:100%;background:var(--cobalt);border-radius:4px 0 0 4px}
+  .bar-row .bv{font-family:var(--mono);font-size:12.5px;font-weight:600;text-align:right}
+  .input-note{background:var(--cobalt-soft);border:1px dashed var(--cobalt-2);border-radius:8px;padding:12px 15px;font-size:12.5px;color:var(--ink);margin-bottom:18px}
+  .input-note b{font-weight:600}
+  .item{border:1px solid var(--line);border-left:3px solid var(--cobalt);border-radius:9px;padding:15px 17px;background:var(--surface)}
+  .item + .item{margin-top:11px}
+  .item .it-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .it-date{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--cobalt);background:var(--cobalt-soft);padding:3px 9px;border-radius:5px}
+  .it-body{font-size:14px;color:var(--ink)}
+  .section-label{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink-2);margin:28px 0 13px;display:flex;align-items:center;gap:9px}
+  .section-label .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-weight:400}
+  .section-label:first-child{margin-top:0}
+  .empty{text-align:center;color:var(--ink-3);font-size:13.5px;padding:22px;border:1px dashed var(--line-strong);border-radius:10px}
+  .refresh-wrap{display:flex;align-items:center;gap:10px;width:100%;padding-top:6px}
+  .btn-refresh{font-family:var(--body);font-size:12.5px;font-weight:600;color:#fff;background:var(--cobalt);
+    border:none;border-radius:7px;padding:7px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+    transition:background .15s}
+  .btn-refresh:hover{background:var(--cobalt-2)}
+  .btn-refresh:disabled{opacity:.6;cursor:default}
+  .btn-refresh .ico{display:inline-block;font-size:14px}
+  .btn-refresh.spin .ico{animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .load-status{font-family:var(--mono);font-size:11px;color:#8894A5}
+  .foot{margin-top:24px;font-size:11.5px;color:var(--ink-3);font-family:var(--mono);text-align:center}
+  @media(max-width:860px){
+    .g2,.g3,.g4{grid-template-columns:1fr}
+    .metric .value{font-size:32px}
+    .fn-row{grid-template-columns:96px 1fr 40px;gap:8px}
+    .fn-name{font-size:12px}
+    .bar-row{grid-template-columns:104px 1fr 46px}
+    .wrap{padding:0 14px 56px}.topbar{padding:18px 16px}
+    .bc-row{grid-template-columns:96px 40px 1fr;gap:8px}
+    .bc-lbl{font-size:11.5px}
+    .bc-axis{grid-template-columns:96px 1fr;gap:8px}
+    .cf-row{grid-template-columns:1fr auto;gap:6px 10px}
+    .cf-det{grid-column:1 / -1;order:3}
+    .conf-head{gap:10px}
+  }
+  /* Tabelas viram blocos empilhados no celular (cada feature = um cartão) */
+  @media(max-width:640px){
+    table.responsive thead{display:none}
+    table.responsive tbody{display:block}
+    table.responsive tr{display:block;border:1px solid var(--line);border-radius:9px;
+      padding:6px 12px;margin-bottom:10px;background:var(--surface-2)}
+    table.responsive tr.subtotal{background:var(--cobalt-soft);border-color:var(--line-strong)}
+    table.responsive td{display:flex;justify-content:space-between;align-items:center;gap:14px;
+      text-align:right;padding:7px 0;border-bottom:1px solid var(--line)}
+    table.responsive tr td:last-child{border-bottom:none}
+    table.responsive td::before{content:attr(data-label);font-family:var(--mono);font-size:10.5px;
+      letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);text-align:left;font-weight:500}
+    table.responsive td.fname{font-weight:600;font-size:15px;justify-content:flex-start;
+      border-bottom:2px solid var(--line-strong);padding-bottom:9px}
+    table.responsive td.fname::before{content:none}
+    table.responsive td.num,table.responsive td.pctcell{text-align:right}
+    table.responsive tr.subtotal td::before{color:var(--ink-2)}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="brand">
+      <div class="eyebrow">Projeto · Global (equipe terceira)</div>
+      <h1>Novo PRO — Andamento</h1>
+    </div>
+    <div class="deadline-chip">
+      <div class="dl-label">Prazo final</div>
+      <div class="dl-date" id="dl-date">16/10</div>
+      <div class="dl-days" id="dl-days"></div>
+    </div>
+    <div class="updated" id="updated"></div>
+    <div class="refresh-wrap">
+      <button id="btn-refresh" class="btn-refresh"><span class="ico">↻</span> Atualizar</button>
+      <span id="load-status" class="load-status"></span>
+    </div>
+  </div>
+</header>
+<nav class="tabs"><div class="tabs-inner" id="tabs"></div></nav>
+<div class="wrap">
+  <section class="panel active" data-panel="exec"></section>
+  <section class="panel" data-panel="escopo"></section>
+  <section class="panel" data-panel="horas"></section>
+  <section class="panel" data-panel="decisoes"></section>
+  <div class="foot" id="foot"></div>
+</div>
+<script src="dados.js"></script>
+<script>
+/* =====================================================================
+   Dados vêm do arquivo externo dados.js (window.DASHBOARD_DATA).
+   Para atualizar o painel, edite/republique apenas o dados.js.
+   ===================================================================== */
+/* =====================================================================
+   FONTE DE DADOS
+   - ENDPOINT vazio  -> usa dados embutidos / dados.js (window.DASHBOARD_DATA)
+   - ENDPOINT com URL -> busca o JSON no webhook do N8N (botão Atualizar)
+   O dado embutido serve de fallback se o endpoint falhar (mostra última versão).
+   ===================================================================== */
+const ENDPOINT = "https://seu-n8n.com/webhook/novo-pro-dados";// cole aqui a URL do webhook N8N para ativar o modo ao vivo
+let lastData = (typeof window!=="undefined" && window.DASHBOARD_DATA) ? window.DASHBOARD_DATA : null;
+
+/* ===================== motor ===================== */
+const $=(s,e=document)=>e.querySelector(s);
+const el=(t,c,h)=>{const x=document.createElement(t);if(c)x.className=c;if(h!=null)x.innerHTML=h;return x;};
+function build(DADOS){
+  // limpa os painéis antes de redesenhar (re-render no Atualizar)
+  ["exec","escopo","horas","decisoes"].forEach(id=>{var pe=document.querySelector('.panel[data-panel="'+id+'"]');if(pe)pe.innerHTML="";});
+  const P=DADOS.projeto;
+const ST={validacao:{cls:"valid",label:"Em validação"},desenvolvimento:{cls:"dev",label:"Em desenvolvimento"},nao_iniciado:{cls:"idle",label:"Não iniciado"}};
+
+const allF=DADOS.personas.flatMap(p=>p.features);
+const totalFeat=allF.length;
+const cnt={validacao:0,desenvolvimento:0,nao_iniciado:0}; allF.forEach(f=>cnt[f.status]++);
+const pbisTotais=allF.reduce((s,f)=>s+(f.pbis||0),0);
+const pbisReal=allF.filter(f=>f.refin==="realizado").reduce((s,f)=>s+(f.pbis||0),0);
+const pbisEst=pbisTotais-pbisReal;
+const pbisTests=allF.reduce((s,f)=>s+(f.tests||0),0);
+const reqTotal=allF.reduce((s,f)=>s+(f.req||0),0);
+const pctValid=Math.round(pbisTests/pbisTotais*100);
+const horasTotal=DADOS.horas.porMes.reduce((s,m)=>s+m.h,0);
+const d0=new Date(P.inicioExecucao+"T00:00:00");
+const dEnd=new Date(P.deadline+"T00:00:00");
+const dNow=new Date(P.atualizadoEm+"T00:00:00");
+const DAY=86400000;
+const totalDias=Math.round((dEnd-d0)/DAY);
+const decorridos=Math.max(0,Math.round((dNow-d0)/DAY));
+const restantes=Math.max(0,Math.round((dEnd-dNow)/DAY));
+const pctTempo=Math.min(100,Math.max(0,Math.round(decorridos/totalDias*100)));
+
+/* --- Indicador de confiança na entrega (regras auditáveis, não é probabilidade) --- */
+const CONF={ // metodologia visível e ajustável
+  pesos:{ritmo:1, maturidade:1, iniciado:1},
+  faixas:{alta:70, media:50}, // >=70 Alta · 50-69 Média · <50 Baixa
+};
+const featsIniciadas=cnt.validacao+cnt.desenvolvimento;
+const fatores=[
+  { chave:"ritmo", nome:"Ritmo (progresso × tempo)",
+    nota: pctTempo? Math.min(100,Math.round(pctValid/pctTempo*100)) : 0,
+    detalhe:`${pctValid}% pronto p/ validação vs ${pctTempo}% do tempo decorrido` },
+  { chave:"maturidade", nome:"Maturidade do escopo",
+    nota: Math.round(pbisReal/pbisTotais*100),
+    detalhe:`${pbisReal} de ${pbisTotais} PBIs refinados; ${pbisEst} ainda são estimativa` },
+  { chave:"iniciado", nome:"Escopo iniciado",
+    nota: Math.round(featsIniciadas/totalFeat*100),
+    detalhe:`${featsIniciadas} de ${totalFeat} features iniciadas; ${cnt.nao_iniciado} não começaram` },
+];
+const somaPesos=Object.values(CONF.pesos).reduce((a,b)=>a+b,0);
+const confScore=Math.round(fatores.reduce((s,f)=>s+f.nota*CONF.pesos[f.chave],0)/somaPesos);
+const confNivel = confScore>=CONF.faixas.alta?{k:"alta",label:"Alta",cls:"done"}
+                : confScore>=CONF.faixas.media?{k:"media",label:"Média",cls:"dev"}
+                : {k:"baixa",label:"Baixa",cls:"risk"};
+function notaCor(n){return n>=CONF.faixas.alta?"var(--done)":n>=CONF.faixas.media?"var(--dev)":"var(--risk)";}
+
+$("#dl-date").textContent=dEnd.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
+$("#dl-days").textContent=restantes+" dias restantes";
+$("#updated").textContent="Atualizado em "+dNow.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})+" · fonte: planilha MVP_PRO";
+$("#foot").textContent="Fonte: planilha MVP_PRO (Projeto Completo, Horas Alocadas, Decisões). % Pronto para Validação = PBIs em Tests ÷ PBIs Totais. Realizado = PBIs criados; Estimado = estimativa do protótipo.";
+
+const TABS=[{id:"exec",label:"Visão executiva"},{id:"escopo",label:"Escopo & features"},{id:"horas",label:"Horas alocadas"},{id:"decisoes",label:"Decisões"}];
+const tabsEl=$("#tabs");
+if(!tabsEl.children.length) TABS.forEach((t,i)=>{
+  const b=el("button","tab"+(i===0?" active":""),t.label);
+  b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));b.classList.add("active");$(`.panel[data-panel="${t.id}"]`).classList.add("active");window.scrollTo({top:0,behavior:"smooth"});};
+  tabsEl.appendChild(b);
+});
+function metric(label,value,unit,sub,mod){const c=el("div","card metric"+(mod?" "+mod:""));c.appendChild(el("div","label",label));c.appendChild(el("div","value",value+(unit?`<span class="u">${unit}</span>`:"")));if(sub)c.appendChild(el("div","sub",sub));return c;}
+
+/* ===== TAB 1: EXECUTIVA ===== */
+(function(){
+  const p=$('.panel[data-panel="exec"]');
+  const hero=el("div","card");
+  hero.innerHTML=`<h2>Linha do tempo até o prazo</h2><div class="h-sub">Início da execução em ${d0.toLocaleDateString("pt-BR")} (1ª semana com horas) · prazo em ${dEnd.toLocaleDateString("pt-BR")}</div>`;
+  const tl=el("div","timeline");
+  tl.innerHTML=`<div class="tl-track"><div class="tl-elapsed" style="width:${pctTempo}%"></div><div class="tl-today" style="left:${pctTempo}%"></div></div>
+    <div class="tl-ends"><span><b>${d0.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}</b>início</span><span style="text-align:right"><b>${dEnd.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}</b>prazo</span></div>
+    <div class="tl-meta"><div class="m"><div class="n">${pctTempo}%</div><div class="l">do tempo decorrido</div></div><div class="m"><div class="n">${restantes}</div><div class="l">dias restantes</div></div><div class="m"><div class="n" style="color:var(--valid)">${pctValid}%</div><div class="l">pronto p/ validação</div></div></div>`;
+  hero.appendChild(tl); p.appendChild(hero);
+
+  // indicador de confiança na entrega
+  const conf=el("div","card mt");
+  conf.innerHTML=`<h2>Confiança na entrega até ${dEnd.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</h2>
+    <div class="h-sub">Sinal por regras auditáveis a partir dos dados — indica direção, não é probabilidade de entrega.</div>
+    <div class="conf-head">
+      <span class="conf-badge ${confNivel.cls}"><span class="d"></span>Confiança ${confNivel.label}</span>
+      <span class="conf-score">índice composto <b>${confScore}</b>/100</span>
+    </div>
+    <div class="conf-meter"><div class="pin" style="left:${confScore}%"></div></div>`;
+  const facts=el("div","conf-factors");
+  fatores.forEach(f=>{
+    const r=el("div","cf-row");
+    r.innerHTML=`<span class="cf-name">${f.nome}</span>
+      <span class="cf-nota" style="color:${notaCor(f.nota)}">${f.nota}</span>
+      <span class="cf-det">${f.detalhe}</span>`;
+    facts.appendChild(r);
+  });
+  conf.appendChild(facts);
+  conf.appendChild(el("div","conf-note",`Índice = média dos três fatores (pesos iguais). Faixas: ≥70 Alta · 50–69 Média · &lt;50 Baixa. Evolui para previsão probabilística (Monte Carlo) quando houver histórico de conclusão.`));
+  p.appendChild(conf);
+
+  const row=el("div","grid g4 mt");
+  row.appendChild(metric("Features no total",totalFeat,"","nas 4 personas"));
+  row.appendChild(metric("Em validação",cnt.validacao,"","construídas, aguardando validação","valid"));
+  row.appendChild(metric("Em desenvolvimento",cnt.desenvolvimento,"","sendo trabalhadas agora","dev"));
+  row.appendChild(metric("Não iniciadas",cnt.nao_iniciado,"",`${Math.round(cnt.nao_iniciado/totalFeat*100)}% do escopo`,"idle"));
+  p.appendChild(row);
+
+  const fn=el("div","card mt");
+  fn.innerHTML=`<h2>Funil de PBIs — da estimativa à validação</h2><div class="h-sub">Onde o trabalho realmente está. "Refinados" = PBIs criados no DevOps (Realizado); o resto ainda é estimativa do protótipo.</div>`;
+  const axisMax=pbisTotais;
+  const pct=v=>Math.round(v/pbisTotais*100);
+  const fnData=[
+    {n:"PBIs previstos",s:"realizados + estimados",v:pbisTotais,cls:"b1",showpct:false},
+    {n:"Refinados (criados)",s:"Realizado no DevOps",v:pbisReal,cls:"b2",showpct:true},
+    {n:"Em validação",s:"prontos, aguardam nós",v:pbisTests,cls:"b3",showpct:true},
+  ];
+  const bc=el("div","bc");
+  fnData.forEach(r=>{
+    const rr=el("div","bc-row");
+    rr.innerHTML=`<div class="bc-lbl">${r.n}<small>${r.s}</small></div>
+      <div class="bc-barwrap"><div class="bc-bar ${r.cls}" style="width:${Math.max(1,r.v/axisMax*100)}%"></div>
+      <span class="bc-val">${r.v}${r.showpct?`<small>(${pct(r.v)}%)</small>`:''}</span></div>`;
+    bc.appendChild(rr);
+  });
+  const axis=el("div","bc-axis");
+  const t=n=>Math.round(axisMax*n);
+  axis.innerHTML=`<div></div><div class="ticks"><span>0</span><span>${t(.25)}</span><span>${t(.5)}</span><span>${t(.75)}</span><span>${axisMax}</span></div>`;
+  bc.appendChild(axis);
+  fn.appendChild(bc);
+  const call=el("div","callout");
+  call.innerHTML=`<svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    <div class="ct"><b>Leitura:</b> dos ${pbisTotais} PBIs previstos, só <b>${pbisReal} foram refinados/criados</b> — os outros ${pbisEst} ainda são estimativa do protótipo e podem variar. <b>${pbisTests} estão prontos para validação</b> (${pctValid}%), concentrados nas primeiras features de cada persona. O gargalo à frente é destravar validação e refinar o escopo estimado.</div>`;
+  fn.appendChild(call); p.appendChild(fn);
+
+  const pc=el("div","card mt");
+  pc.innerHTML=`<h2>Andamento por persona</h2><div class="h-sub">Proporção de features por status.</div>`;
+  const pp=el("div","pp");
+  DADOS.personas.forEach(per=>{
+    const tot=per.features.length;
+    const v=per.features.filter(f=>f.status==="validacao").length;
+    const dv=per.features.filter(f=>f.status==="desenvolvimento").length;
+    const rr=el("div","pp-row");
+    rr.innerHTML=`<div class="pp-top"><span class="pp-name">${per.nome}</span><span class="pp-stat">${v} em validação · ${dv} em dev · ${tot-v-dv} não iniciadas</span></div><div class="pp-bar"><i class="s-valid" style="width:${v/tot*100}%"></i><i class="s-dev" style="width:${dv/tot*100}%"></i></div>`;
+    pp.appendChild(rr);
+  });
+  pc.appendChild(pp);
+  pc.appendChild(el("div","legend",`<span><span class="sw" style="background:var(--valid)"></span>Em validação</span><span><span class="sw" style="background:var(--dev)"></span>Em desenvolvimento</span><span><span class="sw" style="background:var(--idle-soft)"></span>Não iniciado</span>`));
+  p.appendChild(pc);
+})();
+
+/* ===== TAB 2: ESCOPO ===== */
+(function(){
+  const p=$('.panel[data-panel="escopo"]');
+  const intro=el("div","input-note");
+  intro.innerHTML=`<b>Refinamento:</b> <span class="tag real">Realizado</span> = PBIs já criados no DevOps · <span class="tag est">Estimado</span> = estimativa do protótipo (pode variar). <b>% em Validação</b> = em validação ÷ total · <b>% Pronto</b> = finalizadas ÷ total.`;
+  p.appendChild(intro);
+  const ORDEM={validacao:1,desenvolvimento:2,nao_iniciado:3}; // Pronto entra antes quando houver done>0
+  const rank=f=>(f.done>0?0:ORDEM[f.status]); // features com finalizadas sobem para o topo
+  DADOS.personas.forEach(per=>{
+    const tot=per.features.length;
+    const v=per.features.filter(f=>f.status==="validacao").length;
+    const dv=per.features.filter(f=>f.status==="desenvolvimento").length;
+    const block=el("div","persona-block");
+    block.innerHTML=`<div class="persona-head"><h3>${per.nome}</h3><span class="ph-stat">${v} em validação · ${dv} em dev · ${tot-v-dv} não iniciadas</span></div>`;
+    const card=el("div","card");
+    const tbl=el("table","responsive");
+    tbl.innerHTML=`<thead><tr><th>Feature</th><th>Status</th><th>Refinamento</th><th class="num">PBIs Total</th><th class="num">Em Validação</th><th class="num">Finalizadas</th><th class="num">% em Val.</th><th class="num">% Pronto</th></tr></thead>`;
+    const tb=el("tbody");
+    const feats=[...per.features].sort((a,b)=>rank(a)-rank(b)); // ordena por status
+    feats.forEach(f=>{
+      const s=ST[f.status];
+      const pctVal=f.pbis?Math.round(f.tests/f.pbis*100):0;
+      const pctDone=f.pbis?Math.round((f.done||0)/f.pbis*100):0;
+      const tr=el("tr");
+      tr.innerHTML=`<td class="fname">${f.nome}</td>
+        <td data-label="Status"><span class="st ${s.cls}"><span class="d"></span>${s.label}</span></td>
+        <td data-label="Refinamento"><span class="tag ${f.refin==="realizado"?"real":"est"}">${f.refin==="realizado"?"Realizado":"Estimado"}</span></td>
+        <td class="num mono" data-label="PBIs Total">${f.pbis}</td>
+        <td class="num mono" data-label="Em Validação">${f.tests||'<span class="dash">0</span>'}</td>
+        <td class="num mono" data-label="Finalizadas">${(f.done||0)||'<span class="dash">0</span>'}</td>
+        <td class="num pctcell" data-label="% em Validação" style="color:${pctVal>0?'var(--valid)':'var(--ink-3)'}">${pctVal}%</td>
+        <td class="num pctcell" data-label="% Pronto" style="color:${pctDone>0?'var(--done)':'var(--ink-3)'}">${pctDone}%</td>`;
+      tb.appendChild(tr);
+    });
+    const sPbi=per.features.reduce((s,f)=>s+f.pbis,0);
+    const sTest=per.features.reduce((s,f)=>s+f.tests,0);
+    const sDone=per.features.reduce((s,f)=>s+(f.done||0),0);
+    const sub=el("tr","subtotal");
+    sub.innerHTML=`<td class="fname">Subtotal</td><td data-label="Status"></td><td data-label="Refinamento"></td><td class="num" data-label="PBIs Total">${sPbi}</td><td class="num" data-label="Em Validação">${sTest}</td><td class="num" data-label="Finalizadas">${sDone}</td><td class="num" data-label="% em Validação">${sPbi?Math.round(sTest/sPbi*100):0}%</td><td class="num" data-label="% Pronto">${sPbi?Math.round(sDone/sPbi*100):0}%</td>`;
+    tb.appendChild(sub);
+    tbl.appendChild(tb);card.appendChild(tbl);block.appendChild(card);p.appendChild(block);
+  });
+})();
+
+/* ===== TAB 3: HORAS ===== */
+(function(){
+  const p=$('.panel[data-panel="horas"]');
+  const H=DADOS.horas;
+  const note=el("div","input-note");
+  note.innerHTML=`Horas <b>alocadas pela Global</b> no período <b>${H.periodo}</b>, direto da aba "Horas Alocadas". ${H.contratadas?`Teto contratado: ${H.contratadas} h.`:`A planilha não registra um teto contratado — se houver, adicione em <span class="mono">horas.contratadas</span> para comparar consumo x orçamento.`}`;
+  p.appendChild(note);
+
+  const row=el("div","grid g3");
+  row.appendChild(metric("Total alocado",horasTotal.toLocaleString("pt-BR"),"h",H.periodo,"valid"));
+  row.appendChild(metric("Pessoas",H.porPessoa.length,"","na equipe da Global"));
+  row.appendChild(metric("Papéis",H.porPapel.length,"","frentes técnicas","idle"));
+  p.appendChild(row);
+
+  // por mês
+  const chart=el("div","card mt");
+  chart.innerHTML=`<h2>Horas alocadas por mês</h2><div class="h-sub">Ritmo de alocação da equipe ao longo do projeto.</div>`;
+  const maxM=Math.max(...H.porMes.map(m=>m.h),1);
+  const bars=el("div","hbars");
+  H.porMes.forEach(m=>{const hb=el("div","hb");hb.innerHTML=`<div class="hv">${m.h}</div><div class="stack"><div class="cons" style="height:${m.h/maxM*100}%"></div></div><div class="mo">${m.mes}</div>`;bars.appendChild(hb);});
+  chart.appendChild(bars);
+  p.appendChild(chart);
+
+  // por papel
+  const rp=el("div","card mt");
+  rp.innerHTML=`<h2>Horas por papel</h2><div class="h-sub">Onde o esforço foi concentrado.</div>`;
+  const maxP=Math.max(...H.porPapel.map(x=>x.h),1);
+  H.porPapel.forEach(x=>{const r=el("div","bar-row");r.innerHTML=`<span class="bl">${x.t}</span><div class="bt"><span style="width:${x.h/maxP*100}%"></span></div><span class="bv">${x.h} h</span>`;rp.appendChild(r);});
+  p.appendChild(rp);
+
+  // por pessoa (tabela)
+  const tc=el("div","card mt");
+  tc.innerHTML=`<h2>Horas por pessoa</h2>`;
+  const tbl=el("table","responsive");
+  tbl.innerHTML=`<thead><tr><th>Colaborador</th><th class="num">Horas</th><th class="num">% do total</th></tr></thead>`;
+  const tb=el("tbody");
+  H.porPessoa.forEach(x=>{const tr=el("tr");tr.innerHTML=`<td class="fname">${x.n}</td><td class="num mono" data-label="Horas">${x.h}</td><td class="num mono" data-label="% do total">${Math.round(x.h/horasTotal*100)}%</td>`;tb.appendChild(tr);});
+  const sub=el("tr","subtotal");sub.innerHTML=`<td class="fname">Total</td><td class="num" data-label="Horas">${horasTotal}</td><td class="num" data-label="% do total">100%</td>`;tb.appendChild(sub);
+  tbl.appendChild(tb);tc.appendChild(tbl);p.appendChild(tc);
+})();
+
+/* ===== TAB 4: DECISÕES ===== */
+(function(){
+  const p=$('.panel[data-panel="decisoes"]');
+  p.appendChild(el("div","section-label",`Log de decisões <span class="cnt">${DADOS.decisoes.length}</span>`));
+  if(DADOS.decisoes.length){
+    DADOS.decisoes.forEach(d=>{
+      const it=el("div","item");
+      it.innerHTML=`<div class="it-top"><span class="it-date">${d.data}</span></div><div class="it-body">${d.desc}</div>`;
+      p.appendChild(it);
+    });
+  } else p.appendChild(el("div","empty","Nenhuma decisão registrada."));
+})();
+}
+
+/* ---- carregamento e botão Atualizar ---- */
+function setLoad(state,msg){
+  const btn=$("#btn-refresh"), s=$("#load-status");
+  if(!btn) return;
+  if(state==="loading"){btn.disabled=true;btn.classList.add("spin");s.textContent="atualizando…";}
+  else if(state==="error"){btn.disabled=false;btn.classList.remove("spin");s.textContent=msg||"falha ao atualizar";}
+  else {btn.disabled=false;btn.classList.remove("spin");s.textContent=msg||"";}
+}
+async function loadData(){
+  if(!ENDPOINT){
+    if(!lastData){document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;color:#C0392B">Sem dados: configure o ENDPOINT ou inclua o dados.js.</div>';return;}
+    build(lastData); setLoad("idle",""); return;
+  }
+  setLoad("loading");
+  try{
+    const r=await fetch(ENDPOINT,{cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const json=await r.json();
+    lastData=json; build(json);
+    setLoad("idle","atualizado "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){
+    if(lastData){build(lastData);setLoad("error","sem conexão — exibindo última versão");}
+    else {document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;color:#C0392B">Não foi possível carregar do endpoint e não há cópia local.<br>Verifique o N8N.</div>';}
+  }
+}
+function initDash(){
+  const btn=$("#btn-refresh"); if(btn) btn.onclick=loadData;
+  loadData();
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",initDash);
+else initDash();
+</script>
+</body>
+</html>
